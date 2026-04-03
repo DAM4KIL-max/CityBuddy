@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "624723651705",
+    "project_id": "citybuddy-b3f79",
+    "storage_bucket": "citybuddy-b3f79.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:624723651705:android:a6689fd0cd7b296887b8a8",
+        "android_client_info": {
+          "package_name": "com.adam.citybuddy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGbbQG-WJksSUJjlmPLmclNLts52SJ3Gc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
