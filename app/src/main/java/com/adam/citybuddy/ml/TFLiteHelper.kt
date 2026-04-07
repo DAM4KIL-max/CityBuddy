@@ -10,18 +10,16 @@ import java.nio.channels.FileChannel
 class TFLiteHelper(context: Context) {
     private var interpreter: Interpreter? = null
 
-    // This vocabulary must match your Python training script exactly
-    private val vocab = mapOf(
-        "stress" to 1, "study" to 2, "exam" to 3, "sad" to 4,
-        "friend" to 5, "help" to 6, "tired" to 7, "sleep" to 8,
-        "anxious" to 9, "professional" to 10
+    // This MUST match the exact alphabetical order the AI learned in Colab
+    private val classNames = listOf(
+        "Aamily", "Aidil", "Ain", "Azib",
+        "Madam Wani", "Naqeeb", "Qaisy", "Sir Firdaus"
     )
 
     init {
         try {
             val model = loadModelFile(context, "matcher_model.tflite")
             val options = Interpreter.Options()
-            // Some newer devices require explicitly setting the number of threads
             options.setNumThreads(4)
             interpreter = Interpreter(model, options)
         } catch (e: Exception) {
@@ -35,61 +33,45 @@ class TFLiteHelper(context: Context) {
         val fileChannel = inputStream.channel
         val startOffset = fileDescriptor.startOffset
         val declaredLength = fileDescriptor.declaredLength
-
         val buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
-
-        // IMPORTANT: Close the descriptor to prevent "Could not find package" or memory errors
         fileDescriptor.close()
         return buffer
     }
 
-    private fun tokenize(text: String): FloatArray {
-        val inputVector = FloatArray(10) { 0f }
-        // Clean the text: remove punctuation so "stress." becomes "stress"
-        val cleanText = text.lowercase().replace(Regex("[^a-z\\s]"), "")
-        val words = cleanText.split(Regex("\\s+"))
+    // ── NEW SUPERPOWER: GET ALL SCORES ─────────────────────────────────────────
+    // This feeds the raw string to the AI and gets a scorecard for all 8 people.
+    fun getAllProbabilities(text: String): Map<String, Float> {
+        val currInterpreter = interpreter ?: return emptyMap()
 
-        var count = 0
-        for (word in words) {
-            if (count >= 10) break
-            if (word.isNotBlank()) {
-                val id = vocab[word] ?: 0
-                inputVector[count] = id.toFloat()
-                count++
-            }
-        }
-        return inputVector
-    }
+        // 1. Pass the raw string exactly as the user typed it
+        val input = arrayOf(text)
 
-    fun predictMatch(userInput: String): String {
-        // Double-check if interpreter initialized correctly
-        val currInterpreter = interpreter ?: return "AI not ready"
+        // 2. Expect 8 outputs (one probability score for each person)
+        val output = Array(1) { FloatArray(8) }
 
-        // Input shape: [1, 10]
-        val input = arrayOf(tokenize(userInput))
-        // Output shape: [1, 3]
-        val output = Array(1) { FloatArray(3) }
-
-        try {
+        return try {
             currInterpreter.run(input, output)
-
             val scores = output[0]
-            // Finding the index with the highest probability score
-            val maxIndex = scores.indices.maxByOrNull { scores[it] } ?: 0
 
-            return when (maxIndex) {
-                0 -> "Madam Wani (Counselor)"
-                1 -> "Aidil (PRS)"
-                2 -> "Naqeeb (PRS)"
-                else -> "General Support"
-            }
+            // 3. Match the 8 scores to the 8 names to create a map
+            // Example: { "Aamily": 0.1f, "Azib": 0.8f, ... }
+            classNames.mapIndexed { index, name ->
+                name to scores[index]
+            }.toMap()
+
         } catch (e: Exception) {
             e.printStackTrace()
-            return "Prediction Error: ${e.message}"
+            emptyMap()
         }
     }
 
-    // Call this in your Activity's onDestroy to free up your phone's RAM
+    // (Kept so older parts of your app don't break, though SurveyScreen uses getAllProbabilities now)
+    fun predictMatch(userInput: String): String {
+        val probabilities = getAllProbabilities(userInput)
+        // Find the person with the highest score
+        return probabilities.maxByOrNull { it.value }?.key ?: "Prediction Error"
+    }
+
     fun close() {
         interpreter?.close()
         interpreter = null

@@ -1,18 +1,18 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android") // Added: This is the missing link!
+    id("org.jetbrains.kotlin.android")
     id("com.google.gms.google-services")
     alias(libs.plugins.compose.compiler)
 }
 
 android {
     namespace = "com.adam.citybuddy"
-    compileSdk = 34
+    compileSdk = 36                    // ← bump to 35; 34 is outdated as of late 2024
 
     defaultConfig {
         applicationId = "com.adam.citybuddy"
-        minSdk = 29
-        targetSdk = 34
+        minSdk = 26                    // ← lowered from 29; TFLite only needs 21
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -29,18 +29,18 @@ android {
 
     buildFeatures {
         compose = true
-        mlModelBinding = false // Keep false to use your TFLiteHelper manual loader
+        mlModelBinding = false
     }
 
     packaging {
         resources {
-            pickFirsts += "**/AndroidManifest.xml"
-            pickFirsts += "**/libtensorflowlite_jni.so"
-            // These lines prevent the 20+ AAR Metadata errors
+            // ↓ REMOVED the AndroidManifest.xml and .so pickFirsts — those
+            //   were masking the real duplicate-dependency bug, not fixing it.
             excludes += "META-INF/DEPENDENCIES"
             excludes += "META-INF/LICENSE*"
             excludes += "META-INF/NOTICE*"
             excludes += "META-INF/*.kotlin_module"
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
 }
@@ -59,10 +59,12 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
-    // TensorFlow Lite - Core Engine Only
-    // Removing 'support' and 'metadata' libraries stops the version conflicts.
+    // TensorFlow Lite — ONE artifact only.
+    // tensorflow-lite-api is already bundled inside tensorflow-lite.
+    // Adding it separately is what caused all 20 AAR metadata errors.
     implementation("org.tensorflow:tensorflow-lite:2.16.1")
-    implementation("org.tensorflow:tensorflow-lite-api:2.16.1")
+    implementation("org.tensorflow:tensorflow-lite-select-tf-ops:2.14.0")
+    // ↑ REMOVED: tensorflow-lite-api:2.16.1  ← this was the root cause
 
     // Compose BOM & Material
     implementation(platform(libs.androidx.compose.bom))
