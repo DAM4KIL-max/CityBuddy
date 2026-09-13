@@ -1,121 +1,144 @@
 package com.adam.citybuddy.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
-import com.adam.citybuddy.ml.TFLiteHelper
-import com.adam.citybuddy.ui.screens.BookingScreen
-import com.adam.citybuddy.ui.screens.CounselorSelectionScreen
-import com.adam.citybuddy.ui.screens.MatchResultScreen
-import com.adam.citybuddy.ui.screens.PRSSelectionScreen
-import com.adam.citybuddy.ui.screens.SupportPerson
-import com.adam.citybuddy.ui.screens.AuthChoiceScreen
-import com.adam.citybuddy.ui.screens.ChatScreen
-import com.adam.citybuddy.ui.screens.LoginScreen
-import com.adam.citybuddy.ui.screens.SignUpScreen
-import com.adam.citybuddy.ui.screens.SupportHubScreen
-import com.adam.citybuddy.ui.screens.SurveyScreen
-import com.adam.citybuddy.ui.screens.WelcomeScreen
-import com.adam.citybuddy.ui.screens.WellbeingScreen  // ← added
-import com.adam.citybuddy.ui.screens.prsList
+import com.adam.citybuddy.*
+import com.adam.citybuddy.ui.screens.*
 import com.google.firebase.auth.FirebaseAuth
+
+// 1. Defined an Enum to replace all the magic numbers
+enum class Destination {
+    Welcome, AuthChoice, Login, SignUp, Survey,
+    MatchResult, MainHub, PRSSelection, CounselorSelection, Chat, Wellbeing
+}
 
 @Composable
 fun NavGraph() {
     val context = LocalContext.current
-    val tfliteHelper: TFLiteHelper = remember { TFLiteHelper(context) }
+    val prMatcher = remember { PRMatcher(context) }
 
-    val auth = FirebaseAuth.getInstance()
-    val startPage = if (auth.currentUser != null) -5 else -2  // your change kept
+    // remember the auth instance so it doesn't re-fetch on every recomposition
+    val auth = remember { FirebaseAuth.getInstance() }
 
-    var page by remember { mutableIntStateOf(startPage) }
-    var matchedName by remember { mutableStateOf("") }
-    var bookingPerson by remember { mutableStateOf<SupportPerson?>(null) }
+    // Set the starting destination using the Enum
+    val startDestination = if (auth.currentUser != null) Destination.Survey else Destination.Welcome
+    var currentDestination by remember { mutableStateOf(startDestination) }
+
+    var matchedPersona by remember { mutableStateOf<PRPersona?>(null) }
+    var bookingPerson by remember { mutableStateOf<PRPersona?>(null) }
 
     DisposableEffect(Unit) {
         onDispose {
-            try { tfliteHelper.close() } catch (_: Exception) {}
+            try { prMatcher.close() } catch (_: Exception) {}
         }
     }
 
-    // Booking screen overlays everything when triggered
+    // 2. Replaced the early 'return' with an if/else block
     if (bookingPerson != null) {
+        // 3. Added BackHandler so the system back button dismisses the booking overlay
+        BackHandler { bookingPerson = null }
+
         BookingScreen(
             person = bookingPerson!!,
             onBack = { bookingPerson = null }
         )
-        return  // ← added: prevents the when block from rendering behind BookingScreen
-    }
-
-    when (page) {
-
-        // ── Auth flow ──────────────────────────────────────────────────────
-        -2 -> WelcomeScreen(onStart = { page = -3 })
-
-        -3 -> AuthChoiceScreen(
-            onLoginSelected  = { page = -1 },
-            onSignUpSelected = { page = -4 }
-        )
-
-        -1 -> LoginScreen(
-            onLoginSuccess = { page = -5 },
-            onBack         = { page = -3 }
-        )
-
-        -4 -> SignUpScreen(
-            onSignUpSuccess = { page = -1 },
-            onBack          = { page = -3 }
-        )
-
-        // ── Survey & AI Match ──────────────────────────────────────────────
-        -5 -> SurveyScreen(
-            tfliteHelper = tfliteHelper,
-            onMatchFound = { name ->
-                matchedName = name
-                page = -6
+    } else {
+        // Main Navigation Switch using our Enum
+        when (currentDestination) {
+            Destination.Welcome -> {
+                WelcomeScreen(onStart = { currentDestination = Destination.AuthChoice })
             }
-        )
 
-        -6 -> MatchResultScreen(
-            matchedName = matchedName,
-            onGoToHub   = { page = 0 },
-            onBook      = { person -> bookingPerson = person }
-        )
-
-        // ── Support Hub ────────────────────────────────────────────────────
-        0 -> SupportHubScreen(
-            onNav = { destination: Int ->
-                when (destination) {
-                    1 -> page = 1   // PRS Students
-                    2 -> page = 2   // Counselors
-                    3 -> page = 3   // Community Chat
-                    4 -> page = 4   // Well-being Tips  ← added
-                    5 -> page = -6  // AI Match result
-                    else -> page = destination
-                }
-            },
-            onLogout = { page = -3 }
-        )
-
-        // ── Sub-screens ────────────────────────────────────────────────────
-        1 -> PRSSelectionScreen(
-            onBack      = { page = 0 },
-            onSelectPRS = { name ->
-                val person = prsList.firstOrNull { it.name == name }
-                if (person != null) bookingPerson = person
+            Destination.AuthChoice -> {
+                AuthChoiceScreen(
+                    onLoginSelected = { currentDestination = Destination.Login },
+                    onSignUpSelected = { currentDestination = Destination.SignUp }
+                )
             }
-        )
 
-        2 -> CounselorSelectionScreen(
-            onBack = { page = 0 }
-        )
+            Destination.Login -> {
+                // BackHandler allows the user to go back to AuthChoice safely
+                BackHandler { currentDestination = Destination.AuthChoice }
+                LoginScreen(
+                    onLoginSuccess = { currentDestination = Destination.Survey },
+                    onBack = { currentDestination = Destination.AuthChoice }
+                )
+            }
 
-        3 -> ChatScreen(
-            buddyName = "Community Chat",
-            onBack    = { page = 0 }
-        )
+            Destination.SignUp -> {
+                BackHandler { currentDestination = Destination.AuthChoice }
+                SignUpScreen(
+                    onSignUpSuccess = { currentDestination = Destination.Login },
+                    onBack = { currentDestination = Destination.AuthChoice }
+                )
+            }
 
-        4 -> WellbeingScreen(           // ← added
-            onBack = { page = 0 }
-        )
+            Destination.Survey -> {
+                SurveyScreen(
+                    prMatcher = prMatcher,
+                    onMatchFound = { persona ->
+                        matchedPersona = persona
+                        currentDestination = Destination.MatchResult
+                    }
+                )
+            }
+
+            Destination.MatchResult -> {
+                // If they press back on the result, let's take them to the Main Hub
+                BackHandler { currentDestination = Destination.MainHub }
+                MatchResultScreen(
+                    matchedPersona = matchedPersona,
+                    onGoToHub = { currentDestination = Destination.MainHub },
+                    onBook = { person -> bookingPerson = person }
+                )
+            }
+
+            // ── Main Dashboard Container with Bottom Navigation ──
+            Destination.MainHub -> {
+                MainTabContainer(
+                    onNavToPage = { destinationIndex: Int ->
+                        // Map your bottom navigation indices to the Enum
+                        currentDestination = when (destinationIndex) {
+                            1 -> Destination.PRSSelection
+                            2 -> Destination.CounselorSelection
+                            3 -> Destination.Chat
+                            4 -> Destination.Wellbeing
+                            5 -> Destination.MatchResult
+                            else -> Destination.MainHub
+                        }
+                    },
+                    onRetakeSurvey = { currentDestination = Destination.Survey },
+                    onLogout = {
+                        auth.signOut() // Added sign out to ensure Firebase clears the user
+                        currentDestination = Destination.AuthChoice
+                    }
+                )
+            }
+
+            Destination.PRSSelection -> {
+                BackHandler { currentDestination = Destination.MainHub }
+                PRSSelectionScreen(
+                    prList = prMatcher.prList,
+                    onBack = { currentDestination = Destination.MainHub },
+                    onSelectPRS = { persona -> bookingPerson = persona }
+                )
+            }
+
+            Destination.CounselorSelection -> {
+                BackHandler { currentDestination = Destination.MainHub }
+                CounselorSelectionScreen(onBack = { currentDestination = Destination.MainHub })
+            }
+
+            Destination.Chat -> {
+                BackHandler { currentDestination = Destination.MainHub }
+                ChatScreen(buddyName = "Community Chat", onBack = { currentDestination = Destination.MainHub })
+            }
+
+            Destination.Wellbeing -> {
+                BackHandler { currentDestination = Destination.MainHub }
+                WellbeingScreen(onBack = { currentDestination = Destination.MainHub })
+            }
+        }
     }
 }

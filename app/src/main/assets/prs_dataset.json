@@ -1,0 +1,231 @@
+[
+  {
+    "name": "Abid",
+    "role": "Time Management & Habit Building",
+    "language": "Malay",
+    "image": "abid.png",
+    "email": "abid@school.edu.my",
+    "phrases": [
+      "Jadual belajar saya tak teratur langsung",
+      "Asyik bertangguh kerja sekolah sampai last minute",
+      "Susah sangat nak fokus masa ulang kaji",
+      "Macam mana nak buat jadual harian yang betul?",
+      "Telefon selalu ganggu saya bila nak belajar",
+      "Tak boleh nak susun masa antara tuisyen dengan sekolah",
+      "Saya nak berubah jadi pelajar yang lebih berdisiplin",
+      "Macam mana nak buang tabiat suka bertangguh?"
+    ],
+    "keywords": [
+      "time management", "jadual belajar", "procrastination", "disiplin", "timetable help", "susun masa", "focus tips", "bertangguh"
+    ]
+  },
+  {
+    "name": "Syah",
+    "role": "Exam Stress & Test Anxiety",
+    "language": "Malay",
+    "image": "syah.png",
+    "email": "syah@school.edu.my",
+    "phrases": [
+      "Takut sangat nak ambik trial SPM minggu depan",
+      "Dada berdebar-debar bila fikir pasal exam",
+      "Rasa macam blank terus masa dalam dewan peperiksaan",
+      "Stres gila fikir pasal result peperiksaan nanti",
+      "Tak boleh tidur sebab asyik fikir pasal gred",
+      "Macam mana nak hilangkan rasa panik masa exam?",
+      "Rasa tertekan sangat dengan expectation ibu bapa pasal gred"
+    ],
+    "keywords": [
+      "exam stress", "takut exam", "spm stress", "exam anxiety", "result exam", "overthinking grades", "stres belajar", "panik exam"
+    ]
+  },
+  {
+    "name": "Ivan",
+    "role": "Self-Confidence & Public Speaking",
+    "language": "Eng",
+    "image": "ivan.png",
+    "email": "ivan@school.edu.my",
+    "phrases": [
+      "I want to become more confident in front of a crowd",
+      "I get extremely nervous when presenting in class",
+      "How do I stop feeling so shy and insecure around people?",
+      "Can you teach me how to improve my public speaking skills?",
+      "I feel socially awkward and lack self-confidence",
+      "How do I speak up and share my opinions bravely?",
+      "I panic whenever I have to talk to large groups"
+    ],
+    "keywords": [
+      "public speaking", "confidence", "build confidence", "shy", "presentation fear", "insecure", "brave", "outspoken"
+    ]
+  },
+  {
+    "name": "Azib",
+    "role": "Academic Tutoring & STEM Subjects",
+    "language": "Eng",
+    "image": "azib.png",
+    "email": "azib@school.edu.my",
+    "phrases": [
+      "I need a study buddy for Additional Mathematics",
+      "I don't understand today's Physics formula at all",
+      "Can you explain this Chemistry chapter to me?",
+      "I am struggling with Add Maths and need tutoring help",
+      "Can we solve past-year exam papers together tonight?",
+      "My homework is piling up and I don't understand it",
+      "I need help with science formulas and calculations"
+    ],
+    "keywords": [
+      "study buddy", "add maths tutor", "tutoring", "physics help", "homework help", "past year paper", "chemistry formula", "stem help"
+    ]
+  },
+  {
+    "name": "Ain",
+    "role": "Asrama & Hostel Life Conflicts",
+    "language": "Malay",
+    "image": "ain.png",
+    "email": "ain@school.edu.my",
+    "phrases": [
+      "Kena buli mental dekat asrama, tak tahan dah",
+      "Roommate saya selalu cari pasal dan sangat toxic",
+      "Kena pulau dengan budak dorm sendiri",
+      "Senior asrama selalu buli dan arah saya macam-macam",
+      "Stress duduk asrama sebab takde privasi langsung",
+      "Saya rasa tak selamat duduk dalam dorm ni",
+      "Tak tahu nak deal dengan masalah gaduh kat asrama"
+    ],
+    "keywords": [
+      "buli asrama", "toxic roommate", "kena pulau", "budak dorm", "senior buli", "gaduh dorm", "asrama stress"
+    ]
+  },
+  {
+    "name": "Qaiys",
+    "role": "Emotional Encouragement & Positivity",
+    "language": "Malay",
+    "image": "qaiys.png",
+    "email": "qaiys@school.edu.my",
+    "phrases": [
+      "Rasa down sangat harini tak tahu kenapa",
+      "Perlukan sokongan moral untuk teruskan hari",
+      "Saya dah putus asa dengan semuanya",
+      "Boleh bagi kata-kata semangat sikit tak?",
+      "Rasa macam diri ni tak berguna langsung",
+      "Mental saya tengah koyak teruk sekarang ni",
+      "Boleh tak ingatkan saya yang saya ni berharga?"
+    ],
+    "keywords": [
+      "kata semangat", "sokongan moral", "putus asa", "rasa down", "mental koyak", "hilang semangat", "perlu dorongan"
+    ]
+  },
+  {
+    "name": "Amna",
+    "role": "Burnout Recovery & Creative Outlets",
+    "language": "Malay",
+    "image": "amna.png",
+    "email": "amna@school.edu.my",
+    "phrases": [
+      "Otak saya dah tepu sangat, tak boleh nak proses apa-apa",
+      "Saya rasa sangat burnt out dengan kerja sekolah",
+      "Perlukan rehat dan gangguan daripada pelajaran sekejap",
+      "Rasa penat mental sampai takde tenaga nak buat hobi",
+      "Macam mana nak pulih daripada academic burnout?",
+      "Semua benda rasa meletihkan dan berulang-ulang",
+      "Saya perlukan cara untuk hilangkan stres fikiran"
+    ],
+    "keywords": [
+      "burnout", "otak tepu", "penat mental", "exhausted", "destress", "rehat mental", "brain fatigue"
+    ]
+  },
+  {
+    "name": "Qaireen",
+    "role": "Peer Listening & Casual Meluah",
+    "language": "Malay",
+    "image": "qaireen.png",
+    "email": "qaireen@school.edu.my",
+    "phrases": [
+      "Saya perlukan kawan untuk meluah perasaan",
+      "Boleh tak nak sembang kosong, otak serabut sikit",
+      "Saya tak perlukan nasihat, cuma nak orang dengar je",
+      "Nak cerita masalah sikit, sudi dengar tak?",
+      "Boleh jadi pendengar setia saya untuk harini?",
+      "Takde mood nak buat apa-apa, nak borak je",
+      "Boleh tak awak dengar cerita saya tanpa judge?"
+    ],
+    "keywords": [
+      "meluah perasaan", "sembang kosong", "otak serabut", "dengar cerita", "luah rasa", "pendengar setia", "nak borak"
+    ]
+  },
+  {
+    "name": "Aamily",
+    "role": "Mental Health First Aid & Crisis",
+    "language": "Eng",
+    "image": "aamily.png",
+    "email": "aamily@school.edu.my",
+    "phrases": [
+      "I am having a severe panic attack right now",
+      "I feel completely numb and empty inside",
+      "I am having really dark thoughts and I'm scared",
+      "I need urgent mental health grounding support",
+      "I can't stop crying and my chest feels heavy",
+      "My anxiety is paralyzing me, I can't breathe",
+      "I need professional mental health guidance and help"
+    ],
+    "keywords": [
+      "panic attack", "severe anxiety", "dark thoughts", "empty inside", "mental health", "emotional crisis", "grounding"
+    ]
+  },
+  {
+    "name": "WongYuan",
+    "role": "Career & Post-SPM Planning",
+    "language": "Eng",
+    "image": "wongyuan.png",
+    "email": "wongyuan@school.edu.my",
+    "phrases": [
+      "I need advice on my future career path after SPM",
+      "How do I choose the right university course after school?",
+      "How do I apply for scholarships after SPM?",
+      "I don't know which stream or subject pathway to take",
+      "What skills should I build before leaving school?",
+      "I feel lost about what degree course suits my interests",
+      "How do I write a good resume for scholarship applications?"
+    ],
+    "keywords": [
+      "career guidance", "future plans", "scholarship", "post SPM", "university options", "resume template", "degree choice"
+    ]
+  },
+  {
+    "name": "Qaseh",
+    "role": "Friendship & Social Relationship Drama",
+    "language": "Eng",
+    "image": "qaseh.png",
+    "email": "qaseh@school.edu.my",
+    "phrases": [
+      "My friends ignored me at lunch and left me out",
+      "I got into a huge fight with my best friend",
+      "People are spreading bad rumors about me at school",
+      "My friend group kicked me out for no reason",
+      "How do I deal with toxic friends around me?",
+      "I feel like nobody in my class actually likes me",
+      "I sit alone during break time and feel isolated"
+    ],
+    "keywords": [
+      "friend fight", "left out", "toxic friends", "rumors", "isolated", "no friends", "friendship drama"
+    ]
+  },
+  {
+    "name": "Arwen",
+    "role": "Introvert Support & Personal Boundaries",
+    "language": "Eng",
+    "image": "arwen.png",
+    "email": "arwen@school.edu.my",
+    "phrases": [
+      "I am a huge introvert and school social events drain me",
+      "I feel awkward when forced into large social groups",
+      "How do I set personal boundaries with pushy people?",
+      "I feel like an outsider because I prefer being quiet",
+      "I feel uncomfortable and overwhelmed in noisy crowds",
+      "How do I deal with peer pressure without being rude?",
+      "I get socially drained so easily after talking to people"
+    ],
+    "keywords": [
+      "introvert", "socially drained", "personal boundaries", "peer pressure", "awkward", "outsider", "quiet person"
+    ]
+  }
+]

@@ -7,11 +7,11 @@ plugins {
 
 android {
     namespace = "com.adam.citybuddy"
-    compileSdk = 36                    // ← bump to 35; 34 is outdated as of late 2024
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.adam.citybuddy"
-        minSdk = 26                    // ← lowered from 29; TFLite only needs 21
+        minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -20,6 +20,10 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+    }
+
+    aaptOptions {
+        noCompress += "tflite"
     }
 
     compileOptions {
@@ -34,8 +38,6 @@ android {
 
     packaging {
         resources {
-            // ↓ REMOVED the AndroidManifest.xml and .so pickFirsts — those
-            //   were masking the real duplicate-dependency bug, not fixing it.
             excludes += "META-INF/DEPENDENCIES"
             excludes += "META-INF/LICENSE*"
             excludes += "META-INF/NOTICE*"
@@ -59,12 +61,12 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
-    // TensorFlow Lite — ONE artifact only.
-    // tensorflow-lite-api is already bundled inside tensorflow-lite.
-    // Adding it separately is what caused all 20 AAR metadata errors.
+    // JSON Parsing
+    implementation("com.google.code.gson:gson:2.10.1")
+
+    // TensorFlow Lite
     implementation("org.tensorflow:tensorflow-lite:2.16.1")
     implementation("org.tensorflow:tensorflow-lite-select-tf-ops:2.14.0")
-    // ↑ REMOVED: tensorflow-lite-api:2.16.1  ← this was the root cause
 
     // Compose BOM & Material
     implementation(platform(libs.androidx.compose.bom))

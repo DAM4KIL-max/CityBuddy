@@ -1,52 +1,15 @@
 package com.adam.citybuddy.ui.screens
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.EaseInOutSine
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -58,80 +21,71 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.adam.citybuddy.ml.TFLiteHelper
+import com.adam.citybuddy.PRMatcher
+import com.adam.citybuddy.PRPersona
 import com.adam.citybuddy.ui.theme.AccentGold
 import com.adam.citybuddy.ui.theme.ButtonPurple
 import com.adam.citybuddy.ui.theme.DeepPurple
 import kotlinx.coroutines.delay
 
-// The last question index — used to show special UI
-private const val LAST_QUESTION = 2
+// ── Counselor List ────────────────────────────────────────────────────────────
+val counselors = listOf(
+    PRPersona(
+        name = "Sir Firdaus",
+        role = "School Counselor",
+        email = "firdaus@school.edu.my",
+        image = "",
+        keywords = listOf("Counseling", "Guidance", "Academic Support"),
+        language = "English / Malay",
+        phrases = emptyList()
+    ),
+    PRPersona(
+        name = "Madam Wani",
+        role = "School Counselor",
+        email = "wani@school.edu.my",
+        image = "",
+        keywords = listOf("Counseling", "Guidance", "Emotional Wellbeing"),
+        language = "English / Malay",
+        phrases = emptyList()
+    )
+)
 
 @Composable
 fun SurveyScreen(
-    tfliteHelper: TFLiteHelper,
-    onMatchFound: (String) -> Unit
+    prMatcher: PRMatcher,
+    onMatchFound: (PRPersona) -> Unit
 ) {
-    var currentQuestion by remember { mutableIntStateOf(0) }
-    var userInput       by remember { mutableStateOf("") }
-    var isAnalyzing     by remember { mutableStateOf(false) }
-    val userAnswers     = remember { mutableStateListOf<String>() }
+    var currentStep by remember { mutableIntStateOf(0) }
+    var problemText by remember { mutableStateOf("") }
+    var preferenceChoice by remember { mutableStateOf("") }
+    var otherText by remember { mutableStateOf("") }
+    var isAnalyzing by remember { mutableStateOf(false) }
 
-    // Last question choice state
-    var preferenceChoice by remember { mutableStateOf("") } // "peer", "professional", or "other"
-    var otherText        by remember { mutableStateOf("") }
-
-    val questions = listOf(
-        "How has your sleep been lately?",
-        "Are you feeling overwhelmed by studies or personal matters?",
-        "Would you prefer talking to a peer or a professional?"
-    )
-
-    // Determines if the current answer is filled in enough to proceed
-    val canProceed = when {
-        currentQuestion == LAST_QUESTION -> when (preferenceChoice) {
-            "other"        -> otherText.isNotBlank()
-            "peer",
-            "professional" -> true
-            else           -> false
-        }
-        else -> userInput.isNotBlank()
+    val canProceedStep0 = problemText.isNotBlank()
+    val canProceedStep1 = when (preferenceChoice) {
+        "peer", "professional" -> true
+        "other" -> otherText.isNotBlank()
+        else -> false
     }
 
+    // ── AI logic with TFLite Model ───────────────────────────────────────────
     LaunchedEffect(isAnalyzing) {
         if (isAnalyzing) {
-            val textContext = userAnswers.take(2).joinToString(separator = ". ")
+            val (matchedPR, _) = prMatcher.match(problemText)
             delay(2500)
 
-            // 1. Get the probability scores for ALL 8 people (e.g., Azib: 0.8, Firdaus: 0.1...)
-            // Note: We will need to update TFLiteHelper to support this function next!
-            val allProbabilities = tfliteHelper.getAllProbabilities(textContext)
-
-            // 2. Define the exact groups
-            val professionals = listOf("Sir Firdaus", "Madam Wani")
-            val peers = listOf("Naqeeb", "Azib", "Aidil", "Aamily", "Qaisy", "Ain")
-
-            // 3. THE BAN SYSTEM
-            val finalMatch = when (preferenceChoice) {
-                "peer" -> {
-                    // BAN professionals: Keep only peers, then find the highest AI score among them
-                    allProbabilities.filterKeys { it in peers }
-                        .maxByOrNull { it.value }?.key ?: "Naqeeb"
-                }
-                "professional" -> {
-                    // BAN peers: Keep only professionals, find the highest AI score
-                    allProbabilities.filterKeys { it in professionals }
-                        .maxByOrNull { it.value }?.key ?: "Sir Firdaus"
-                }
-                else -> {
-                    // "Other" / no choice: Pick the absolute highest score with no bans
-                    allProbabilities.maxByOrNull { it.value }?.key ?: "Sir Firdaus"
-                }
+            // If user explicitly wants a counselor, give them one.
+            // Otherwise, give them the AI-matched PR (or fallback to first PR / counselor)
+            val finalMatch = if (preferenceChoice == "professional") {
+                counselors.first()
+            } else {
+                matchedPR ?: prMatcher.prList.firstOrNull() ?: counselors.first()
             }
 
             onMatchFound(finalMatch)
         }
     }
+
     if (isAnalyzing) {
         AnalyzingScreen()
         return
@@ -168,7 +122,6 @@ fun SurveyScreen(
                 .padding(32.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-
             // ── Header ─────────────────────────────────────────────────────
             Column {
                 Spacer(Modifier.height(16.dp))
@@ -198,14 +151,14 @@ fun SurveyScreen(
                 )
             }
 
-            // ── Progress dots ───────────────────────────────────────────────
+            // ── Progress dots ──────────────────────────────────────────────
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
-                questions.forEachIndexed { index, _ ->
-                    val isActive = index == currentQuestion
-                    val isDone   = index < currentQuestion
+                repeat(2) { index ->
+                    val isActive = index == currentStep
+                    val isDone   = index < currentStep
                     Box(
                         Modifier
                             .height(6.dp)
@@ -222,15 +175,17 @@ fun SurveyScreen(
                 }
             }
 
-            // ── Question card ───────────────────────────────────────────────
+            // ── Step content ───────────────────────────────────────────────
             AnimatedContent(
-                targetState = currentQuestion,
+                targetState = currentStep,
                 transitionSpec = {
                     (fadeIn(tween(300)) + slideInHorizontally(tween(300)) { it / 4 })
-                        .togetherWith(fadeOut(tween(200)) + slideOutHorizontally(tween(200)) { -it / 4 })
+                        .togetherWith(
+                            fadeOut(tween(200)) + slideOutHorizontally(tween(200)) { -it / 4 }
+                        )
                 },
-                label = "questionTransition"
-            ) { qIndex ->
+                label = "stepTransition"
+            ) { step ->
                 Column(
                     Modifier
                         .fillMaxWidth()
@@ -239,74 +194,111 @@ fun SurveyScreen(
                         .border(1.dp, Color.White.copy(0.12f), RoundedCornerShape(24.dp))
                         .padding(24.dp)
                 ) {
-                    // Step indicator
                     Text(
-                        "Question ${qIndex + 1} of ${questions.size}",
+                        "Step ${step + 1} of 2",
                         color = Color.White.copy(0.5f),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     )
                     Spacer(Modifier.height(12.dp))
-                    Text(
-                        questions[qIndex],
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        lineHeight = 28.sp
-                    )
-                    Spacer(Modifier.height(24.dp))
 
-                    if (qIndex == LAST_QUESTION) {
-                        // ── Special last question UI ───────────────────────
-                        LastQuestionInput(
-                            preferenceChoice = preferenceChoice,
-                            otherText        = otherText,
-                            onChoiceChange   = { preferenceChoice = it },
-                            onOtherTextChange = { otherText = it }
-                        )
-                    } else {
-                        // ── Regular text input ─────────────────────────────
-                        OutlinedTextField(
-                            value = userInput,
-                            onValueChange = { userInput = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp),
-                            placeholder = {
-                                Text(
-                                    "Type your answer…",
-                                    color = Color.White.copy(0.4f)
-                                )
-                            },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor   = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor   = AccentGold,
-                                unfocusedBorderColor = Color.White.copy(0.25f),
-                                cursorColor          = AccentGold
-                            ),
-                            minLines = 3
-                        )
+                    when (step) {
+                        // ── Step 0: Open problem description ───────────────
+                        0 -> {
+                            Text(
+                                "What's been on your mind?",
+                                color = Color.White,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                lineHeight = 28.sp
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Describe what you're going through. The more detail you share, the better your match will be.",
+                                color = Color.White.copy(0.6f),
+                                fontSize = 13.sp,
+                                lineHeight = 20.sp
+                            )
+                            Spacer(Modifier.height(20.dp))
+                            OutlinedTextField(
+                                value         = problemText,
+                                onValueChange = { problemText = it },
+                                modifier      = Modifier.fillMaxWidth(),
+                                shape         = RoundedCornerShape(14.dp),
+                                placeholder   = {
+                                    Text(
+                                        "e.g. I've been feeling really anxious about my exams and can't sleep…",
+                                        color = Color.White.copy(0.35f),
+                                        fontSize = 13.sp
+                                    )
+                                },
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedTextColor     = Color.White,
+                                    unfocusedTextColor   = Color.White,
+                                    focusedBorderColor   = AccentGold,
+                                    unfocusedBorderColor = Color.White.copy(0.25f),
+                                    cursorColor          = AccentGold
+                                ),
+                                minLines = 5
+                            )
+                        }
+
+                        // ── Step 1: Preference picker ──────────────────────
+                        1 -> {
+                            Text(
+                                "Who would you prefer to talk to?",
+                                color = Color.White,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                lineHeight = 28.sp
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "CityBuddy will use your answer to narrow down the best match.",
+                                color = Color.White.copy(0.6f),
+                                fontSize = 13.sp,
+                                lineHeight = 20.sp
+                            )
+                            Spacer(Modifier.height(20.dp))
+
+                            PreferenceButton(
+                                emoji    = "🙋",
+                                label    = "A Peer (PRS Student)",
+                                sublabel = "A trained student helper my age",
+                                selected = preferenceChoice == "peer",
+                                color    = Color(0xFFFF9800),
+                                onClick  = { preferenceChoice = "peer" }
+                            )
+                            Spacer(Modifier.height(10.dp))
+                            PreferenceButton(
+                                emoji    = "👩‍💼",
+                                label    = "A Counselor",
+                                sublabel = "A professional staff member",
+                                selected = preferenceChoice == "professional",
+                                color    = Color(0xFF2196F3),
+                                onClick  = { preferenceChoice = "professional" }
+                            )
+                            Spacer(Modifier.height(10.dp))
+                            PreferenceButton(
+                                emoji    = "✏️",
+                                label    = "No Preference",
+                                sublabel = "Let the AI decide for me",
+                                selected = preferenceChoice == "other",
+                                color    = Color(0xFF9E9E9E),
+                                onClick  = { preferenceChoice = "other" }
+                            )
+                        }
                     }
                 }
             }
 
-            // ── Next / Submit button ────────────────────────────────────────
+            // ── Button ─────────────────────────────────────────────────────
             Column {
+                val canProceed = if (currentStep == 0) canProceedStep0 else canProceedStep1
                 Button(
                     onClick = {
-                        val answer = when {
-                            currentQuestion == LAST_QUESTION -> when (preferenceChoice) {
-                                "peer"         -> "peer"
-                                "professional" -> "professional"
-                                else           -> otherText
-                            }
-                            else -> userInput
-                        }
-                        userAnswers.add(answer)
-
-                        if (currentQuestion < questions.size - 1) {
-                            currentQuestion++
-                            userInput = ""
+                        if (currentStep == 0) {
+                            currentStep = 1
                         } else {
                             isAnalyzing = true
                         }
@@ -316,85 +308,40 @@ fun SurveyScreen(
                         .height(56.dp),
                     enabled = canProceed,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = AccentGold,
+                        containerColor         = AccentGold,
                         disabledContainerColor = Color.White.copy(0.15f)
                     ),
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Text(
-                        if (currentQuestion == questions.size - 1) "Find My Match ✨" else "Next →",
-                        color = if (canProceed) DeepPurple else Color.White.copy(0.4f),
+                        if (currentStep == 1) "Find My Match ✨" else "Next →",
+                        color      = if (canProceed) DeepPurple else Color.White.copy(0.4f),
                         fontWeight = FontWeight.ExtraBold,
-                        fontSize = 16.sp
+                        fontSize   = 16.sp
                     )
                 }
                 Spacer(Modifier.height(16.dp))
+
+                // Back button on step 1
+                if (currentStep == 1) {
+                    Button(
+                        onClick = { currentStep = 0 },
+                        modifier = Modifier.fillMaxWidth().height(44.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White.copy(0.1f)
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text(
+                            "← Back",
+                            color      = Color.White.copy(0.7f),
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize   = 15.sp
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
             }
-        }
-    }
-}
-
-// ── Last Question: Peer / Professional / Other ────────────────────────────────
-@Composable
-private fun LastQuestionInput(
-    preferenceChoice: String,
-    otherText: String,
-    onChoiceChange: (String) -> Unit,
-    onOtherTextChange: (String) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-
-        // Peer button
-        PreferenceButton(
-            emoji    = "🙋",
-            label    = "Peer",
-            sublabel = "Talk to a trained student helper",
-            selected = preferenceChoice == "peer",
-            color    = Color(0xFFFF9800),
-            onClick  = { onChoiceChange("peer") }
-        )
-
-        // Counselor button
-        PreferenceButton(
-            emoji    = "👩‍💼",
-            label    = "Counselor",
-            sublabel = "Speak with a professional",
-            selected = preferenceChoice == "professional",
-            color    = Color(0xFF2196F3),
-            onClick  = { onChoiceChange("professional") }
-        )
-
-        // Other option
-        PreferenceButton(
-            emoji    = "✏️",
-            label    = "Other",
-            sublabel = "Something else on your mind",
-            selected = preferenceChoice == "other",
-            color    = Color(0xFF9E9E9E),
-            onClick  = { onChoiceChange("other") }
-        )
-
-        // Text box appears only when "other" is selected
-        AnimatedVisibility(visible = preferenceChoice == "other") {
-            OutlinedTextField(
-                value = otherText,
-                onValueChange = onOtherTextChange,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                shape = RoundedCornerShape(14.dp),
-                placeholder = {
-                    Text("Tell us more…", color = Color.White.copy(0.4f))
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor     = Color.White,
-                    unfocusedTextColor   = Color.White,
-                    focusedBorderColor   = AccentGold,
-                    unfocusedBorderColor = Color.White.copy(0.25f),
-                    cursorColor          = AccentGold
-                ),
-                minLines = 2
-            )
         }
     }
 }
@@ -414,8 +361,7 @@ private fun PreferenceButton(
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(
-                if (selected) color.copy(alpha = 0.2f)
-                else Color.White.copy(alpha = 0.05f)
+                if (selected) color.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.05f)
             )
             .border(
                 width = if (selected) 2.dp else 1.dp,
@@ -431,15 +377,11 @@ private fun PreferenceButton(
             Column(Modifier.weight(1f)) {
                 Text(
                     label,
-                    color = if (selected) color else Color.White,
+                    color      = if (selected) color else Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
+                    fontSize   = 15.sp
                 )
-                Text(
-                    sublabel,
-                    color = Color.White.copy(0.5f),
-                    fontSize = 12.sp
-                )
+                Text(sublabel, color = Color.White.copy(0.5f), fontSize = 12.sp)
             }
             if (selected) {
                 Box(
@@ -448,7 +390,12 @@ private fun PreferenceButton(
                         .background(color, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("✓", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        "✓",
+                        color      = Color.White,
+                        fontSize   = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
@@ -460,9 +407,9 @@ private fun PreferenceButton(
 private fun AnalyzingScreen() {
     val infiniteTransition = rememberInfiniteTransition(label = "analyzing")
     val pulse by infiniteTransition.animateFloat(
-        initialValue = 0.95f,
-        targetValue  = 1.05f,
-        label        = "pulse",
+        initialValue  = 0.95f,
+        targetValue   = 1.05f,
+        label         = "pulse",
         animationSpec = infiniteRepeatable(
             tween(900, easing = EaseInOutSine),
             RepeatMode.Reverse
@@ -477,7 +424,6 @@ private fun AnalyzingScreen() {
             ),
         contentAlignment = Alignment.Center
     ) {
-        // Glowing orb behind spinner
         Box(
             Modifier
                 .size(200.dp)
@@ -485,10 +431,9 @@ private fun AnalyzingScreen() {
                 .background(Color(0x33CE93D8), CircleShape)
                 .blur(40.dp)
         )
-
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(40.dp)
+            modifier            = Modifier.padding(40.dp)
         ) {
             CircularProgressIndicator(
                 color       = AccentGold,
@@ -496,11 +441,7 @@ private fun AnalyzingScreen() {
                 modifier    = Modifier.size(64.dp)
             )
             Spacer(Modifier.height(32.dp))
-            Text(
-                "✨",
-                fontSize = 36.sp,
-                modifier = Modifier.scale(pulse)
-            )
+            Text("✨", fontSize = 36.sp, modifier = Modifier.scale(pulse))
             Spacer(Modifier.height(16.dp))
             Text(
                 "CityBuddy AI\nis finding your match…",
@@ -512,9 +453,9 @@ private fun AnalyzingScreen() {
             )
             Spacer(Modifier.height(12.dp))
             Text(
-                "Analyzing your responses",
-                color    = Color.White.copy(0.6f),
-                fontSize = 14.sp,
+                "Analyzing your response",
+                color     = Color.White.copy(0.6f),
+                fontSize  = 14.sp,
                 textAlign = TextAlign.Center
             )
         }

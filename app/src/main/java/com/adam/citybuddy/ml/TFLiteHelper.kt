@@ -6,11 +6,12 @@ import org.tensorflow.lite.Interpreter
 import java.io.FileInputStream
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
+import android.util.Log
 
 class TFLiteHelper(context: Context) {
     private var interpreter: Interpreter? = null
 
-    // This MUST match the exact alphabetical order the AI learned in Colab
+    // Must match your Colab training alphabetical order exactly
     private val classNames = listOf(
         "Aamily", "Aidil", "Ain", "Azib",
         "Madam Wani", "Naqeeb", "Qaisy", "Sir Firdaus"
@@ -22,7 +23,9 @@ class TFLiteHelper(context: Context) {
             val options = Interpreter.Options()
             options.setNumThreads(4)
             interpreter = Interpreter(model, options)
+            Log.d("CITY_BUDDY_AI", "Model loaded successfully!")
         } catch (e: Exception) {
+            Log.e("CITY_BUDDY_AI", "Failed to load model: ${e.message}")
             e.printStackTrace()
         }
     }
@@ -32,48 +35,51 @@ class TFLiteHelper(context: Context) {
         val inputStream = FileInputStream(fileDescriptor.fileDescriptor)
         val fileChannel = inputStream.channel
         val startOffset = fileDescriptor.startOffset
-        val declaredLength = fileDescriptor.declaredLength
-        val buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
+        val buffer = fileChannel.map(
+            FileChannel.MapMode.READ_ONLY,
+            startOffset,
+            fileDescriptor.declaredLength
+        )
         fileDescriptor.close()
         return buffer
     }
 
-    // ── NEW SUPERPOWER: GET ALL SCORES ─────────────────────────────────────────
-    // This feeds the raw string to the AI and gets a scorecard for all 8 people.
     fun getAllProbabilities(text: String): Map<String, Float> {
         val currInterpreter = interpreter ?: return emptyMap()
+        if (text.isBlank()) return emptyMap()
 
-        // 1. Pass the raw string exactly as the user typed it
+        // Input: Wrap text into a 2D array [1][1] for the TFLite interpreter
         val input = arrayOf(text)
 
-        // 2. Expect 8 outputs (one probability score for each person)
-        val output = Array(1) { FloatArray(8) }
+        // Output: Create a 2D float array container to receive the 8 prediction scores [1][8]
+        val outputArray = Array(1) { FloatArray(classNames.size) }
 
         return try {
-            currInterpreter.run(input, output)
-            val scores = output[0]
+            // Standard direct run execution for 1 input layer and 1 output layer
+            currInterpreter.run(input, outputArray)
 
-            // 3. Match the 8 scores to the 8 names to create a map
-            // Example: { "Aamily": 0.1f, "Azib": 0.8f, ... }
+            val scores = outputArray[0]
+
+            // FORCE PRINT to Logcat with tag CITY_BUDDY_AI
+            Log.d("CITY_BUDDY_AI", "RAW AI OUTPUT: ${scores.joinToString(", ")}")
+            Log.d("CITY_BUDDY_AI", "SCORES MAP: ${classNames.zip(scores.toList()).toMap()}")
+
             classNames.mapIndexed { index, name ->
                 name to scores[index]
             }.toMap()
-
         } catch (e: Exception) {
+            Log.e("CITY_BUDDY_AI", "AI PROCESSING ERROR: ${e.message}")
             e.printStackTrace()
             emptyMap()
         }
     }
 
-    // (Kept so older parts of your app don't break, though SurveyScreen uses getAllProbabilities now)
     fun predictMatch(userInput: String): String {
         val probabilities = getAllProbabilities(userInput)
-        // Find the person with the highest score
-        return probabilities.maxByOrNull { it.value }?.key ?: "Prediction Error"
+        return probabilities.maxByOrNull { it.value }?.key ?: "Sir Firdaus"
     }
 
     fun close() {
         interpreter?.close()
-        interpreter = null
     }
 }
